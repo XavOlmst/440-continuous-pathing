@@ -13,9 +13,11 @@ public class PlayerPathing : MonoBehaviour
         movement.ArrivedAtLocation += UpdateLocation;
     }
 
+    public void SetPath(List<Vector2> newPath) => path = newPath; 
+
     private void UpdateLocation()
     {
-        if (path.Count == 0) return;
+        if (path == null || path.Count == 0) return;
 
         movement.SetMoveLocation(path[0]);
         path.RemoveAt(0);
