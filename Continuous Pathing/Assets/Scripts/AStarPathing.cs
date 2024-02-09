@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 class AStarNode : IComparable
 {
@@ -49,6 +51,10 @@ class AStarNode : IComparable
 public class AStarPathing : MonoBehaviour
 {
     [SerializeField] private PlayerPathing playerPath;
+    [SerializeField] private Tilemap grid; 
+    [SerializeField] private Tilemap overlayGrid;
+    [SerializeField] private CustomTile overlayTile;
+    [SerializeField] private CustomTile pathTile;
     [SerializeField] private Vector2 endLocation;
     private Transform playerTransform;
 
@@ -62,7 +68,14 @@ public class AStarPathing : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.L))
         {
+            overlayGrid.ClearAllTiles();
             playerPath.SetPath(GetPath());
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            endLocation =  Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Debug.Log(Quantize(endLocation));
         }
     }
 
@@ -81,23 +94,35 @@ public class AStarPathing : MonoBehaviour
 
         while(frontier.Count > 0)
         {
+            if (frontier.Count > 1000)
+            {
+                Debug.Log("No path could be found :'(");
+                return path;
+            }
+            
             explored.Add(frontier[0]);
 
             foreach(var dir in directions)
             {
                 Vector2Int coords = frontier[0].coords + dir;
+                CustomTile tile = grid.GetTile((Vector3Int)coords) as CustomTile;
+                
+                if (tile && tile.isWall) continue; 
+                
                 AStarNode node = new(frontier[0], (endCoords - coords).sqrMagnitude, coords);
-
+                
                 if(node.coords == endCoords)
                 {
                     path.Clear();
                     AStarNode currentNode = node.parentNode;
+                    overlayGrid.SetTile((Vector3Int)coords, pathTile);
                     path.Add(endLocation);
                     //back track and add path
                     while(currentNode != startNode)
                     {
                         path.Add(currentNode.coords);
                         currentNode = currentNode.parentNode;
+                        overlayGrid.SetTile((Vector3Int)currentNode.coords, pathTile);
                     }
 
                     path.Reverse();
@@ -105,14 +130,16 @@ public class AStarPathing : MonoBehaviour
                     return path;
                 }
 
-                if(!explored.Contains(node))
+                if(explored.All(x => x.coords != node.coords))
+                {
+                    overlayGrid.SetTile((Vector3Int)coords, overlayTile);
                     frontier.Add(node);
+                }
             }
 
             frontier.RemoveAt(0);
             frontier.Sort();
         }
-        //find path (fucking nerd)
 
         return path;
     }
