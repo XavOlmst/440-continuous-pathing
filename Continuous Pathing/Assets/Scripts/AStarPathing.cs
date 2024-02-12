@@ -52,10 +52,8 @@ public class AStarPathing : MonoBehaviour
 {
     [SerializeField] private PlayerPathing playerPath;
     [SerializeField] private Tilemap grid; 
-    [SerializeField] private Tilemap overlayGrid;
-    [SerializeField] private CustomTile overlayTile;
-    [SerializeField] private CustomTile pathTile;
     [SerializeField] private Vector2 endLocation;
+    private bool canSetEndPoint;
     private Transform playerTransform;
 
     private Vector2Int[] directions = { Vector2Int.left, Vector2Int.down, Vector2Int.right, Vector2Int.up };
@@ -68,17 +66,21 @@ public class AStarPathing : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.L))
         {
-            overlayGrid.ClearAllTiles();
             playerPath.SetPath(GetPath());
         }
 
-        if (Input.GetMouseButtonDown(0))
+        if (canSetEndPoint && Input.GetMouseButtonUp(0))
         {
             endLocation =  Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Debug.Log(Quantize(endLocation));
         }
     }
 
+    public void SetPath() => playerPath.SetPath(GetPath());
+    
+    public Vector2 GetEndPoint() => endLocation;
+    public bool CanSetEndPoint() => canSetEndPoint;
+    public void SetEndPointSetting(bool canSet) => canSetEndPoint = canSet;
+    
     public List<Vector2> GetPath()
     {
         List<Vector2> path = new();
@@ -115,14 +117,12 @@ public class AStarPathing : MonoBehaviour
                 {
                     path.Clear();
                     AStarNode currentNode = node.parentNode;
-                    overlayGrid.SetTile((Vector3Int)coords, pathTile);
                     path.Add(endLocation);
                     //back track and add path
                     while(currentNode != startNode)
                     {
                         path.Add(currentNode.coords);
                         currentNode = currentNode.parentNode;
-                        overlayGrid.SetTile((Vector3Int)currentNode.coords, pathTile);
                     }
 
                     path.Reverse();
@@ -132,7 +132,6 @@ public class AStarPathing : MonoBehaviour
 
                 if(explored.All(x => x.coords != node.coords))
                 {
-                    overlayGrid.SetTile((Vector3Int)coords, overlayTile);
                     frontier.Add(node);
                 }
             }
@@ -144,7 +143,7 @@ public class AStarPathing : MonoBehaviour
         return path;
     }
 
-    public Vector2Int Quantize(Vector2 location)
+    public static Vector2Int Quantize(Vector2 location)
     {
         return new Vector2Int(Mathf.RoundToInt(location.x), Mathf.RoundToInt(location.y));
     }
