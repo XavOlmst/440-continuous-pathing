@@ -30,9 +30,10 @@ public class WallPlacement : MonoBehaviour
     {
         grid.ClearAllTiles();
 
-        for (int x = -9; x < 10; x++)
+        //Woo!! Hard coding!
+        for (int x = -9; x <= 9; x++)
         {
-            for (int y = -5; y < 6; y++)
+            for (int y = -5; y <= 5; y++)
             {
                 grid.SetTile(new Vector3Int(x, y), groundTile);
             }
